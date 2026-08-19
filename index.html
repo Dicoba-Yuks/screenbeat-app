@@ -11,34 +11,46 @@
         background-color: black;
         color: white;
         font-family: sans-serif;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
         height: 100vh;
+        width: 100vw;
         transition: background-color 0.05s ease-out;
         overflow: hidden;
+        position: relative;
       }
 
       .bright {
         background-color: white;
       }
 
-      h2 {
-        margin-bottom: 20px;
+      /* --- Kelompok Antarmuka Tepi Atas --- */
+      .top-container {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 90%;
+        max-width: 400px;
         mix-blend-mode: difference;
+        z-index: 10;
+      }
+
+      h2 {
+        margin: 0 0 10px 0;
+        font-size: 24px;
       }
 
       button {
-        padding: 15px 30px;
-        font-size: 18px;
+        padding: 12px 28px;
+        font-size: 16px;
         cursor: pointer;
         border-radius: 25px;
         border: none;
         background-color: #007bff;
         color: white;
         transition: background 0.3s;
-        mix-blend-mode: difference;
       }
 
       button:hover {
@@ -46,26 +58,31 @@
       }
 
       #statusText {
-        margin-top: 15px;
-        mix-blend-mode: difference;
+        margin: 8px 0 0 0;
         color: #ccc;
+        font-size: 14px;
+        text-align: center;
       }
 
-      /* --- UI Pengatur Sensitivitas Suara --- */
+      /* --- Kelompok Antarmuka Tepi Bawah --- */
       .control-container {
-        margin-top: 50px;
+        position: fixed;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%);
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 80%;
+        width: 90%;
         max-width: 400px;
-        mix-blend-mode: difference; /* Menjaga elemen tetap terlihat saat layar berkedip */
+        mix-blend-mode: difference;
+        z-index: 10;
       }
 
       .control-container label {
-        font-size: 16px;
+        font-size: 14px;
         color: #ccc;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
       }
 
       .control-group {
@@ -73,7 +90,7 @@
         align-items: center;
         width: 100%;
         justify-content: center;
-        gap: 15px;
+        gap: 12px;
       }
 
       #sensitivitySlider {
@@ -82,9 +99,9 @@
       }
 
       #sensitivityNumber {
-        width: 65px;
-        padding: 8px;
-        font-size: 16px;
+        width: 60px;
+        padding: 6px;
+        font-size: 15px;
         border: 1px solid #555;
         border-radius: 6px;
         background-color: #222;
@@ -94,11 +111,14 @@
     </style>
   </head>
   <body>
-    <h2>ScreenBeat.js</h2>
-    <button id="actionBtn">Start Concert Mode</button>
-    <p id="statusText">Click start and allow microphone access.</p>
+    <!-- Area Tepi Atas -->
+    <div class="top-container">
+      <h2>ScreenBeat.js</h2>
+      <button id="actionBtn">Start Concert Mode</button>
+      <p id="statusText">Click start and allow microphone access.</p>
+    </div>
 
-    <!-- Kontrol Sensitivitas UI -->
+    <!-- Area Tepi Bawah -->
     <div class="control-container">
       <label for="sensitivitySlider">Sound Sensitivity (0 - 255)</label>
       <div class="control-group">
@@ -132,10 +152,8 @@
       let javascriptNode;
       let isRunning = false;
 
-      // Mengambil nilai sensitivitas awal dari elemen UI
       let sensitivity = parseInt(sensitivitySlider.value);
 
-      // Fungsi memperbarui nilai sensitivitas dan menyinkronkan kedua kontrol
       function updateSensitivity() {
         sensitivity = parseInt(this.value);
         sensitivitySlider.value = this.value;
@@ -188,7 +206,6 @@
             }
             let averageVolume = totalVolume / 10;
 
-            // Menggunakan variabel sensitivitas dinamis dari UI
             if (averageVolume > sensitivity) {
               body.classList.add("bright");
             } else {
