@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ScreenBeat.js - Concert Mode</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        /* Starts dim (dark) */
+        background-color: black;
+        color: white;
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        /* --- Educational Point: Transitions --- */
+        /* This line makes the background color fade smoothly. */
+        /* 0.05 seconds is very fast, like a strobe light. */
+        transition: background-color 0.05s ease-out;
+        overflow: hidden; /* Stops scrolling */
+      }
+
+      /* This style represents the "Bright" flash */
+      .bright {
+        background-color: white;
+      }
+
+      h2 {
+        margin-bottom: 20px;
+        /* Stops the text from flashing with the background */
+        mix-blend-mode: difference;
+      }
+
+      button {
+        padding: 15px 30px;
+        font-size: 18px;
+        cursor: pointer;
+        border-radius: 25px;
+        border: none;
+        background-color: #007bff; /* Blue button */
+        color: white;
+        transition: background 0.3s;
+        mix-blend-mode: difference;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      #statusText {
+        margin-top: 15px;
+        mix-blend-mode: difference;
+        color: #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>ScreenBeat.js</h2>
+    <button id="actionBtn">Start Concert Mode</button>
+    <p id="statusText">Click start and allow microphone access.</p>
+
+    <script>
+      const actionBtn = document.getElementById("actionBtn");
+      const statusText = document.getElementById("statusText");
+      const body = document.body;
+
+      let audioContext;
+      let analyser;
+      let microphone;
+      let javascriptNode;
+      let isRunning = false;
+
+      // --- Educational Point: Sensitivity Variable ---
+      // 'sensitivity' is how loud the sound needs to be to cause a flash.
+      // Scale is roughly 0 (very quiet) to 255 (extremely loud).
+      // Set this lower (e.g., 150) for quiet rooms, higher (e.g., 220) for loud concerts.
+      let sensitivity = 190;
+
+      actionBtn.addEventListener("click", function () {
+        if (isRunning) {
+          stopConcertMode();
+        } else {
+          startConcertMode();
+        }
+      });
+
+      async function startConcertMode() {
+        try {
+          // 1. Ask browser for permission to use the "electronic ear" (microphone)
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: false,
+          });
+
+          statusText.innerText = "Listening... Play some music!";
+          actionBtn.innerText = "Stop";
+          isRunning = true;
+
+          // 2. Set up the Audio Brain
+          audioContext = new (
+            window.AudioContext || window.webkitAudioContext
+          )();
+
+          // 3. Create the tools we need
+          analyser = audioContext.createAnalyser(); // Analyzes sound frequencies
+          microphone = audioContext.createMediaStreamSource(stream); // The sound source
+
+          // Old method for analyzing data (easier for beginners to understand)
+          javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+
+          // 4. Connect the tools together (like connecting guitar pedals)
+          // Mic -> Analyser -> Logic Processing -> Speaker Destination
+          analyser.smoothingTimeConstant = 0.3; // Makes changes less jagged
+          analyser.fftSize = 256; // Determines frequency detail
+
+          microphone.connect(analyser);
+          analyser.connect(javascriptNode);
+          javascriptNode.connect(audioContext.destination);
+
+          // 5. This function runs constantly while sound is being processed
+          javascriptNode.onaudioprocess = function () {
+            // Get data about the current sound
+            const array = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(array);
+
+            // Analyze low frequencies (the 'bass' or drum beat)
+            // We check the first few indexes of the audio array
+            let totalVolume = 0;
+            for (let i = 0; i < 10; i++) {
+              totalVolume += array[i];
+            }
+            let averageVolume = totalVolume / 10;
+
+            // --- The Strobe Logic ---
+            if (averageVolume > sensitivity) {
+              // Sound is loud -> Make it bright
+              body.classList.add("bright");
+            } else {
+              // Sound is quiet -> Make it dim
+              body.classList.remove("bright");
+            }
+          };
+        } catch (err) {
+          // If the user says "No" to the microphone or there is another error
+          statusText.innerText = "Error: Allow mic access and use HTTPS.";
+          console.error(err);
+          stopConcertMode();
+        }
+      }
+
+      function stopConcertMode() {
+        isRunning = false;
+        actionBtn.innerText = "Start Concert Mode";
+        statusText.innerText = "Click start and allow microphone access.";
+        body.classList.remove("bright"); // Ensure screen is dim
+
+        // Properly close the audio brain to save battery
+        if (javascriptNode) javascriptNode.onaudioprocess = null;
+        if (microphone) microphone.disconnect();
+        if (analyser) analyser.disconnect();
+        if (javascriptNode) javascriptNode.disconnect();
+        if (audioContext) audioContext.close();
+      }
+    </script>
+  </body>
+</html>
